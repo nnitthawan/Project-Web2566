@@ -110,7 +110,8 @@
         .v-btn__content {
             color: #000000;
         }
-        .notLogin{
+
+        .notLogin {
             color: red;
         }
 
@@ -177,7 +178,6 @@
             <v-main>
                 <v-container>
                     <v-row justify="center">
-                        <!-- Registration Form for Students -->
                         <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && !isTeacher">
                             <v-card elevation="3" class="card">
                                 <v-card-title class="card-title">Registration Form</v-card-title>
@@ -191,20 +191,19 @@
                         </v-col>
 
                         <!-- Registration Form for Teachers -->
-                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && isTeacher">
+                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && isTeacher && !user">
                             <v-card elevation="3" class="card">
                                 <v-card-title class="card-title">Teacher Registration Form</v-card-title>
                                 <v-card-text>
                                     <v-text-field v-model="registrationData.name" label="Full Name"></v-text-field>
                                     <v-text-field v-model="registrationData.email" label="Email"></v-text-field>
-                                    <!-- Add more fields as needed -->
                                     <v-btn @click="registerUser" color="success">Register</v-btn>
                                 </v-card-text>
                             </v-card>
                         </v-col>
 
-                        <!-- Display User Information -->
-                        <v-col cols="12" sm="8" md="6" v-else-if="isLoggedIn">
+
+                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && isRegistered ">
                             <v-card elevation="3" class="card">
                                 <v-card-title class="card-title">{{ title }}</v-card-title>
                                 <v-card-text v-if="user" class="avatar-center">
@@ -215,7 +214,6 @@
                             </v-card>
                         </v-col>
 
-                        <!-- Display User Information -->
                         <v-col cols="12" sm="8" md="6" v-else-if="!isLoggedIn">
                             <v-card elevation="3" class="card">
                                 <v-card-title class="card-title">{{ title }}</v-card-title>
@@ -224,24 +222,40 @@
                                 </v-card-text>
                             </v-card>
                         </v-col>
-
                     </v-row>
+
                     <v-row justify="center">
                         <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && !isTeacher">
                             <v-card elevation="3" class="card">
                                 <v-card-title class="card-title">เช็กชื่อ</v-card-title>
-                                <v-card-actions>
-                                    <v-btn @click="navigate('/student_dashboard.html')" v-if="!isTeacher" color="primary">เช็กชื่อ</v-btn>
+                                <v-card-actions class="d-flex justify-center">
+                                    <v-btn @click="navigate('/student_dashboard.html')" v-if="!isTeacher"
+                                        color="primary">เช็กชื่อ</v-btn>
                                 </v-card-actions>
                             </v-card>
                         </v-col>
-
                     </v-row>
+
+                    <v-row justify="center">
+                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && isTeacher">
+                            <v-card elevation="3" class="card">
+                                <v-card-title class="card-title">เพิ่มการเช็คชื่อ</v-card-title>
+                                <v-card-actions class="d-flex justify-center">
+                                    <v-btn @click="navigate('/add-checkin.html')" v-if="isTeacher"
+                                        color="primary">เพิ่มการเช็คชื่อ</v-btn>
+                                </v-card-actions>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+
+
+
                 </v-container>
             </v-main>
             <div class="footer">{{ footer }}</div>
         </v-app>
     </div>
+
 
     <script type="module">
         const firebaseConfig = {
@@ -259,13 +273,14 @@
         const app = Vue.createApp({
             data() {
                 return {
-                    title: "ยินดีต้อนรับสู่ระบบเช็กชื่อ",
+                    title: "ยินดีต้อนรับสู่ระบบเช็คชื่อ",
                     footer: "footer",
                     user: null,
                     isTeacher: false,
                     drawer: false,
                     isLoggedIn: false,
                     isRegistered: false,
+                    isTeacherRegistered: false,
                     registrationData: {
                         name: "",
                         email: "",
@@ -285,10 +300,9 @@
                     } else {
                         this.user = null;
                         this.isLoggedIn = false;
-                        this.isRegistered = false; 
+                        this.isRegistered = false;
                     }
                 });
-
             },
 
             methods: {
@@ -310,16 +324,16 @@
                                     this.registerStudentData();
                                 }
                             } else {
-                                this.isRegistered = true;
+                                this.isRegistered = true;  // เพิ่มบรรทัดนี้
                             }
                         })
                         .catch((error) => {
                             console.error("Login error: ", error);
                         });
                 },
+
                 async checkRegistrationStatus() {
                     const userDoc = await db.collection("students").doc(this.user.uid).get();
-
                     return userDoc.exists;
                 },
                 registerUser() {
@@ -331,12 +345,11 @@
                         }
                         this.registrationData.name = "";
                         this.isRegistered = false;
+                        console.log("User registered successfully");
                     } else {
                         alert("Please fill in all fields.");
                     }
                 },
-
-
                 isValidRegistrationData() {
                     return (
                         this.registrationData.name &&
@@ -374,7 +387,6 @@
                             console.error("Error adding student data: ", error);
                         });
                 },
-
                 google_logout() {
                     if (confirm("Are you sure?")) {
                         firebase.auth().signOut();
@@ -402,6 +414,7 @@
         const vuetify = Vuetify.createVuetify();
         app.use(vuetify).mount("#app");
     </script>
+
 </body>
 
 </html>
