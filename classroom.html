@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>ห้องเรียน</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+    <style>
+        .prompt-regular {
+            font-family: "Prompt", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        body {
+            font-family: Prompt;
+        }
+
+        /* CSS styles */
+        .card-title {
+            background: linear-gradient(to right, #045f8d, #037db6);
+            color: white;
+        }
+
+        v-card-text {
+            display: flex;
+            align-items: center;
+        }
+
+        .room {
+            margin-top: 10%;
+
+        }
+
+        .v-table>.v-table__wrapper>table>thead>tr>th,
+        .font-weight-bold {
+            font-weight: bold;
+            color: #045f8d;
+        }
+
+        .custom-input {
+            width: 100%;
+            /* ปรับความกว้างตามที่ต้องการ */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <v-app>
+            <v-app-bar app color="indigo" dark>
+                <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+                <v-toolbar-title>
+                    ยินดีต้อนรับ{{ userType === 'teacher' ? 'ครู' : 'นักเรียน' }}
+                    สู่ระบบเช็คชื่อชั้นเรียนออนไลน์ {{ roomData.subject }}
+                </v-toolbar-title>
+            </v-app-bar>
+
+
+            <v-navigation-drawer app v-model="drawer" color="indigo" dark>
+                <v-list>
+                    <v-list-item link @click="goToHome" class="menu-item">
+                        <v-list-item-content class="home-text">
+                            <v-list-item-title>หน้าหลัก</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
+                    <v-list-item link @click="viewTAddcheckin" class="menu-item" v-if="userType === 'teacher'">
+                        <v-list-item-content class="home-text">
+                            <v-list-item-title>เพิ่มการเช็คชื่อ</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
+                    <v-list-item link v-if="userType === 'teacher'" @click="viewAllroom" class="menu-item"
+                        style="background-color: white; color: #045f8d;">
+                        <v-list-item-content class="home-text">
+                            <v-list-item-title>ห้องเรียน</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
+                    <v-list-item link v-if="userType === 'teacher'" @click="viewTeacherDashboard" class="menu-item">
+                        <v-list-item-content class="home-text">
+                            <v-list-item-title>ตรวจสอบรายชื่อนักเรียน</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
+                    <v-list-item v-if="user" link @click="google_logout()" class="menu-item">
+                        <v-list-item-content class="custom-button">
+                            ออกจากระบบ
+                        </v-list-item-content>
+                    </v-list-item>
+
+
+                </v-list>
+            </v-navigation-drawer>
+            <v-main>
+                <v-container>
+                    <v-row justify="center">
+                        <v-col cols="12" sm="10" md="8" class="formtoCheck d-flex justify-center"
+                            v-if="userType === 'teacher'">
+                            <v-card class="formtoCheck" elevation="3">
+                                <v-card-title class="card-title"
+                                    style="background: linear-gradient(to right, #045f8d, #037db6); color: white;">
+                                    รายละเอียดห้องเรียน
+                                </v-card-title>
+                                <v-card-text class="room text-center">
+                                    <div class="font-weight-bold">ชื่อห้องเรียน:</div>
+                                    <div>{{ roomData.subject }}</div>
+                                    <div class="font-weight-bold">รหัสห้องเรียน:</div>
+                                    <div>{{ roomData.room }}</div>
+                                </v-card-text>
+
+                            </v-card>
+                        </v-col>
+                    </v-row>
+
+                    <v-row justify="center" v-if="userType === 'teacher'">
+                        <v-col cols="12" sm="10" md="8">
+                            <v-card class="formtoCheck" elevation="3">
+                                <v-card-title class="card-title"
+                                    style="background: linear-gradient(to right, #045f8d, #037db6); color: white;">
+                                    รายชื่อนักเรียน
+                                </v-card-title>
+                                <v-card-text>
+                                    <v-data-table>
+                                        <template v-slot:default>
+                                            <thead>
+                                                <tr class="th">
+                                                    <th class="text-left">ชื่อ</th>
+                                                    <th class="text-left">อีเมล</th>
+                                                    <th class="text-left">กลุ่มการเรียน</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="(attendee, index) in roomData.attendees" :key="index">
+                                                    <td>{{ attendee.name }}</td>
+                                                    <td>{{ attendee.email }}</td>
+                                                    <td>{{ attendee.section}}</td>
+                                                </tr>
+                                            </tbody>
+                                        </template>
+                                    </v-data-table>
+                                </v-card-text>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+
+                    <v-row justify="center">
+                        <v-col cols="12" sm="10" md="8" class="formtoCheck d-flex justify-center"
+                            v-if="userType === 'student'">
+                            <v-card class="formtoCheck" elevation="3">
+                                <v-card-title class="card-title"
+                                    style="background: linear-gradient(to right, #045f8d, #037db6); color: white;">
+                                    ข้อมูลห้องเรียน
+                                </v-card-title>
+                                <v-card-text class="room text-center">
+                                    <div class="font-weight-bold">ชื่อห้องเรียน:</div>
+                                    <div>{{ roomData.subject }}</div>
+                                </v-card-text>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+
+                    <v-row justify="center">
+                        <v-col cols="12" sm="5" md="4" v-if="userType === 'student'">
+                            <v-card elevation="3">
+                                <v-card-title class="card-title"
+                                    style="background: linear-gradient(to right, #045f8d, #037db6); color: white;">
+                                    คำถาม
+                                </v-card-title>
+                                <v-card-text class="room">
+                                    <!-- ส่วนนี้ใช้เพื่อแสดงคำถาม -->
+                                    <template v-if="questions.length > 0">
+                                        <div v-for="(question, index) in questions" :key="index" class="mb-4">
+                                            <div class="font-weight-bold">{{ question.questionText }}</div>
+                                            <v-text-field v-model="questions[index].answer" label="ตอบคำถาม"
+                                                class="custom-input"></v-text-field>
+                                        </div>
+                                        <v-btn @click="submitAnswers" color="primary">ยืนยัน</v-btn>
+                                    </template>
+                                    <div v-else>ไม่มีคำถามในห้องเรียนนี้</div>
+                                </v-card-text>
+                            </v-card>
+                        </v-col>
+                        <v-col cols="6" sm="5" md="4" v-if="userType === 'student'">
+                            <v-card elevation="3">
+                                <v-card-title class="card-title"
+                                    style="background: linear-gradient(to right, #045f8d, #037db6); color: white;">
+                                    คำตอบ
+                                </v-card-title>
+                                <v-card-text class="room text-center">
+                                    <!-- คำตอบ -->
+                                    <template v-if="userResponse.length > 0">
+                                        <div v-for="(response, index) in userResponse" :key="index" class="mb-4">
+                                            <div class="font-weight-bold">{{ questions[index].questionText }}</div>
+                                            <div>{{ response }}</div>
+                                        </div>
+                                    </template>
+                                    <div v-else>ยังไม่มีคำตอบ</div>
+                                </v-card-text>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                </v-container>
+            </v-main>
+        </v-app>
+    </div>
+
+    <script type="module">
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXFc03qWOzIApde7AvJACJ81Vg-dJOtWw",
+            authDomain: "projectweb2565.firebaseapp.com",
+            projectId: "projectweb2565",
+            storageBucket: "projectweb2565.appspot.com",
+            messagingSenderId: "1058912788198",
+            appId: "1:1058912788198:web:2a7c2041e062d7a9f4e527",
+            measurementId: "G-G79CWQ7PGL"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        const db = firebase.firestore();
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('roomId');
+        const roomId2 = urlParams.get('roomId2');
+        const subjectId = urlParams.get('subjectId');
+        const checkinId = urlParams.get('checkinId');
+
+        const app = Vue.createApp({
+            data() {
+                return {
+                    subject: '',
+                    room: '',
+                    date: null,
+                    drawer: false,
+                    generatedRoomId: '',
+                    showGeneratedRoomId: false,
+                    checkinData: [],
+                    attendees: [],
+                    user: null,
+                    userId: null,
+                    isTeacher: false,
+                    newRoomName: '',
+                    dialogEditRoom: false,
+                    selectedCheckinId: null,
+                    formContainerMargin: 0,
+                    roomData: "",
+                    userType: "",
+                    students: [],
+                    questions: [],
+                    answers: [],
+                    userResponse: [],
+                };
+            },
+            methods: {
+                google_login() {
+                    var provider = new firebase.auth.GoogleAuthProvider();
+                    provider.addScope("profile");
+                    provider.addScope("email");
+                    firebase.auth().signInWithPopup(provider);
+                },
+                google_logout() {
+                    firebase.auth().signOut()
+                        .then(() => {
+                            this.redirectToIndex();
+                        })
+                        .catch((error) => {
+                            console.error("Logout error: ", error);
+                        });
+                },
+                goToDashboard() {
+                    window.location.href = "/index.html";
+                },
+
+                fetchRoom(subjectId) {
+                    if (subjectId) {
+                        db.collection("checkin").doc(subjectId).get()
+                            .then((doc) => {
+                                if (doc.exists) {
+                                    const roomData = doc.data();
+                                    this.roomData = roomData;
+                                } else {
+                                    this.roomData = { subject: "ไม่พบข้อมูลห้องเรียน" };
+                                }
+                            })
+                            .catch((error) => {
+                                console.log("Error getting document:", error);
+                                this.roomData = { subject: "เกิดข้อผิดพลาดในการดึงข้อมูล" };
+                            });
+                    } else {
+                        console.error("Subject ID is not defined or invalid");
+                    }
+                },
+                fetchRoom2(checkinId) {
+                    if (checkinId) {
+                        db.collection("checkin").doc(checkinId).get()
+                            .then((doc) => {
+                                if (doc.exists) {
+                                    const roomData = doc.data();
+                                    this.roomData = roomData;
+                                } else {
+                                    this.roomData = { subject: "ไม่พบข้อมูลห้องเรียน" };
+                                }
+                            })
+                            .catch((error) => {
+                                console.log("Error getting document:", error);
+                                this.roomData = { subject: "เกิดข้อผิดพลาดในการดึงข้อมูล" };
+                            });
+                    } else {
+                        console.error("Subject ID is not defined or invalid");
+                    }
+                },
+                fetchRoomSTD(roomId) {
+                    if (roomId) {
+                        db.collection("checkin").where("room", "==", roomId).get()
+                            .then((querySnapshot) => {
+                                if (!querySnapshot.empty) {
+                                    const doc = querySnapshot.docs[0];
+                                    const roomData = doc.data().subject;
+                                    this.roomData = { subject: roomData, room: roomId };
+                                } else {
+                                    this.roomData = { subject: "ไม่พบข้อมูลห้องเรียน", room: roomId };
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Error getting document:", error);
+                                this.roomData = { subject: "เกิดข้อผิดพลาดในการดึงข้อมูล", room: roomId };
+                            });
+                    } else {
+                        console.error("Room ID is not defined or invalid");
+                    }
+                },
+                fetchRoomSTD2(roomId2) {
+                    if (roomId2) {
+                        db.collection("checkin").where("room", "==", roomId2).get()
+                            .then((querySnapshot) => {
+                                if (!querySnapshot.empty) {
+                                    const doc = querySnapshot.docs[0];
+                                    const roomData = doc.data().subject;
+                                    this.roomData = { subject: roomData, room: roomId2 };
+                                } else {
+                                    this.roomData = { subject: "ไม่พบข้อมูลห้องเรียน", room: roomId2 };
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Error getting document:", error);
+                                this.roomData = { subject: "เกิดข้อผิดพลาดในการดึงข้อมูล", room: roomId2 };
+                            });
+                    } else {
+                        console.error("Room ID is not defined or invalid");
+                    }
+                },
+
+                fetchStudents(subjectId) {
+                    if (subjectId) {
+                        db.collection("checkin").doc(subjectId).collection("attendees").get()
+                            .then((querySnapshot) => {
+                                const students = [];
+                                querySnapshot.forEach((doc) => {
+                                    const studentData = doc.data();
+                                    students.push(studentData);
+                                });
+                                this.students = students;
+                                console.log("Students in the room:", this.students);
+                            })
+                            .catch((error) => {
+                                console.error("Error getting room attendees:", error);
+                            });
+                    } else {
+                        console.error("Subject ID is not defined or invalid");
+                    }
+                },
+                fetchQuestionsByRoomId(roomId) {
+                    db.collection("questions").where("roomId", "==", roomId)
+                        .get()
+                        .then((querySnapshot) => {
+                            const questions = [];
+                            querySnapshot.forEach((doc) => {
+                                const question = doc.data();
+                                questions.push(question);
+                            });
+                            this.questions = questions;
+                        })
+                        .catch((error) => {
+                            console.error("Error fetching questions: ", error);
+                        });
+                },
+                // submitAnswers() {
+                //     if (this.questions.some(question => !question.answer)) {
+                //         alert("กรุณาตอบคำถามทุกข้อก่อนที่จะบันทึก");
+                //         return;
+                //     }
+                //     const user = firebase.auth().currentUser;
+                //     if (!user) {
+                //         alert("กรุณาเข้าสู่ระบบก่อนที่จะบันทึกคำตอบ");
+                //         return;
+                //     }
+                //     if (!this.roomData || !this.roomData.roomId) {
+                //         alert("ไม่พบข้อมูลห้องเรียนหรือรหัสห้องเรียนไม่ถูกต้อง");
+                //         return;
+                //     }
+                //     const dataToSave = {
+                //         userId: user.uid,
+                //         answers: this.questions.map(question => ({
+                //             questionId: question.id, 
+                //             questionText: question.questionText,
+                //             answer: question.answer
+                //         })),
+                //     };
+                //     const checkinRef = db.collection("questions").doc(this.roomData.roomId);
+                //     checkinRef.set(dataToSave)
+                //         .then(() => {
+                //             alert("บันทึกคำตอบเรียบร้อยแล้ว");
+                //         })
+                //         .catch((error) => {
+                //             console.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล:", error);
+                //             alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+                //         });
+                // },
+                goToHome() {
+                    window.location.href = "/index.html";
+                },
+                viewTAddcheckin() {
+                    window.location.href = "/add-checkin.html";
+                },
+                viewAllroom() {
+                    window.location.href = "/allroom.html";
+                },
+                viewTeacherDashboard() {
+                    window.location.href = "/teacher_dashboard.html";
+                },
+                viewStudentDashboard() {
+                    window.location.href = "/student_dashboard.html";
+                },
+            },
+
+            created() {
+                if (roomId) {
+                    this.fetchRoomSTD2(roomId);
+                    this.fetchRoom(roomId);
+                    this.fetchQuestionsByRoomId(roomId);
+                    this.userType = "student";
+                }else if(roomId2){
+                    this.fetchRoomSTD2(roomId2);
+                    this.userType = "student";
+                } else if (subjectId) {
+                    this.fetchStudents(subjectId);
+                    this.fetchRoom(subjectId);
+                    this.fetchRoom2(checkinId);
+                    this.fetchQuestionsByRoomId(subjectId);
+                    this.userType = "teacher";
+                } else {
+                    alert("กรุณากรอกข้อมูลห้องหรือวิชาก่อนเข้าระบบ");
+                }
+                console.log("User Type:", this.userType);
+            }
+
+        });
+
+        const vuetify = Vuetify.createVuetify();
+        app.use(vuetify).mount("#app");
+    </script>
+
+</body>
+
+</html>
