@@ -220,7 +220,7 @@
                 },
 
                 redirectToIndex() {
-                    window.location.href = "/index.html";
+                    window.location.href = "./index.html";
                 },
                 checkUserRole() {
                     const email = this.user.email;
@@ -231,7 +231,7 @@
                     window.location.href = path;
                 },
                 goToHome() {
-                    window.location.href = "/index.html";
+                    window.location.href = "./index.html";
                 },
                 readSubjectsFromFirestore() {
                     db.collection("checkin")
@@ -282,16 +282,16 @@
                     this.studentDetailsDialog = false;
                 },
                 goToClassroom(subjectId) {
-                    window.location.href = "/classroom.html?subjectId=" + subjectId;
+                    window.location.href = "./classroom.html?subjectId=" + subjectId;
                 },
                 viewTAddcheckin() {
-                    window.location.href = "/add-checkin.html";
+                    window.location.href = "./add-checkin.html";
                 },
                 viewAllroom() {
-                    window.location.href = "/allroom.html";
+                    window.location.href = "./allroom.html";
                 },
                 viewTeacherDashboard() {
-                    window.location.href = "/teacher_dashboard.html";
+                    window.location.href = "./teacher_dashboard.html";
                 },
 
             },
