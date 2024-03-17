@@ -240,7 +240,7 @@
                         });
                 },
                 redirectToIndex() {
-                    window.location.href = "/index.html";
+                    window.location.href = "./index.html";
                 },
                 checkUserRole() {
                     const email = this.user.email;
@@ -351,22 +351,22 @@
                     }
                 },
                 goToAddQuestionPage(checkinId) {
-                    window.location.href = `/add_question.html?checkinId=${checkinId}`;
+                    window.location.href = `./add_question.html?checkinId=${checkinId}`;
                 },
                 toggleDrawer() {
                     this.drawer = !this.drawer;
                 },
                 goToHome() {
-                    window.location.href = "/index.html";
+                    window.location.href = "./index.html";
                 },
                 goToClassroom(checkinId) {
-                    window.location.href = "/classroom.html?subjectId=" + checkinId;
+                    window.location.href = "./classroom.html?subjectId=" + checkinId;
                 },
                 viewAllroom() {
-                    window.location.href = "/allroom.html";
+                    window.location.href = "./allroom.html";
                 },
                 viewTeacherDashboard() {
-                    window.location.href = "/teacher_dashboard.html";
+                    window.location.href = "./teacher_dashboard.html";
                 },
 
             },
