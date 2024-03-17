@@ -2,8 +2,8 @@
 <html lang="en">
 
 <head>
-    <title>Add Check-in</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <title>เพิ่มการเช็คชื่อ</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.js"></script>
 
@@ -13,12 +13,20 @@
     <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
     <style>
-        .avatar-center {
-            display: flex;
-            /* align-items: center; */
-            /* justify-content: center; */
+        .prompt-regular {
+            font-family: "Prompt", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        body {
+            font-family: Prompt;
         }
 
         .avatar-center img {
@@ -31,7 +39,6 @@
             align-items: start;
         }
 
-        /* ปรับแต่งเพื่อให้ drawer ขยับได้ถูกต้อง */
         .drawer-content {
             transform: translateX(0) !important;
         }
@@ -40,24 +47,40 @@
             margin-top: 2%;
         }
 
-        .small-datepicker .v-date-picker-header,
         .small-datepicker .v-date-picker-table {
-            font-size: 0.8rem;
-            /* ปรับขนาดตามที่คุณต้องการ */
+            font-size: 0.2rem;
+        }
+
+        .v-picker-title {
+            padding-top: 0;
+        }
+
+        .v-date-picker-header__content {
+            font-size: 2rem;
+            font-weight: bold;
         }
 
         .small-datepicker .v-date-picker-date {
             width: 2rem;
-            /* ปรับขนาดตามที่คุณต้องการ */
             height: 2rem;
-            /* ปรับขนาดตามที่คุณต้องการ */
-            line-height: 2rem;
-            /* ปรับตำแหน่ง vertical-align ตามที่คุณต้องการ */
+            line-height: 1rem;
         }
 
         .small-datepicker .v-date-picker-table tbody tr td {
-            padding: 0.25rem;
-            /* ปรับระยะห่างตามที่คุณต้องการ */
+            padding: 0.10rem;
+        }
+
+        .max-width-card {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .v-input--density-default .v-field__input {
+            width: 500px !important;
+        }
+        .title {
+            background: linear-gradient(to right, #045f8d, #037db6);
+            color: white;
         }
     </style>
 </head>
@@ -68,9 +91,9 @@
             <v-container fluid>
                 <v-app-bar app color="indigo" dark>
                     <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-                    <v-toolbar-title>Attendance System(for taecher)</v-toolbar-title>
+                    <v-toolbar-title>ระบบเช็คชื่อชั้นเรียนออนไลน์ (สำหรับคุณครู)</v-toolbar-title>
                 </v-app-bar>
-                <v-navigation-drawer app v-model="drawer" color="indigo" dark>
+                <v-navigation-drawer app v-model="drawer" color="indigo" dark fixed>
                     <v-list>
                         <v-card elevation="3">
                             <v-card-text v-if="user" class="avatar-center">
@@ -82,21 +105,39 @@
                             </v-card-text>
                         </v-card>
 
-                        <v-list-item link @click="user ? google_logout() : google_login()" class="menu-item">
+                        <v-list-item v-if="!user" link @click="google_login()" class="menu-item">
                             <v-list-item-content class="custom-button">
-                                {{ user ? 'Logout' : 'Login' }}
+                                เข้าสู่ระบบ
                             </v-list-item-content>
                         </v-list-item>
 
-                        <v-list-item link @click="() => { toggleDrawer(); goToHome(); }" class="menu-item">
+                        <v-list-item link @click="goToHome" class="menu-item">
                             <v-list-item-content class="home-text">
-                                <v-list-item-title>Home</v-list-item-title>
+                                <v-list-item-title>หน้าหลัก</v-list-item-title>
                             </v-list-item-content>
                         </v-list-item>
 
-                        <v-list-item link @click="viewTAddcheckin" class="menu-item" v-if="user && isTeacher" style="background-color: white; color: #045f8d;">
+                        <v-list-item link @click="viewTAddcheckin" class="menu-item" v-if="user && isTeacher"
+                            style="background-color: white; color: #045f8d;">
                             <v-list-item-content class="home-text">
-                                <v-list-item-title>Add Check-in</v-list-item-title>
+                                <v-list-item-title>เพิ่มการเช็คชื่อ</v-list-item-title>
+                            </v-list-item-content>
+                        </v-list-item>
+
+                        <v-list-item link v-if="user && isTeacher" @click="viewAllroom" class="menu-item">
+                            <v-list-item-content class="home-text">
+                                <v-list-item-title>ห้องเรียน</v-list-item-title>
+                            </v-list-item-content>
+                        </v-list-item>
+
+                        <v-list-item link v-if="user && isTeacher" @click="viewTeacherDashboard" class="menu-item">
+                            <v-list-item-content class="home-text">
+                                <v-list-item-title>ตรวจสอบรายชื่อนักเรียน</v-list-item-title>
+                            </v-list-item-content>
+                        </v-list-item>
+                        <v-list-item v-if="user" link @click="google_logout()" class="menu-item">
+                            <v-list-item-content class="custom-button">
+                                ออกจากระบบ
                             </v-list-item-content>
                         </v-list-item>
 
@@ -104,61 +145,36 @@
                 </v-navigation-drawer>
                 <v-main>
                     <v-container fluid>
-                        <v-row align="center" justify="center">
-                            <v-col class="content" cols="12" sm="8" md="6">
+                        <v-row align="start" justify="center">
+                            <v-col class="content" cols="12" sm="8" md="6" style="padding-top: 0px; max-width: 500px;">
                                 <v-card elevation="3">
-                                    <v-card-title class="bg-blue-grey">Add Check-in</v-card-title>
+                                    <v-card-title class="title">เพิ่มการเช็คชื่อ</v-card-title>
                                     <v-card-text>
-                                        <v-form class="form" @submit.prevent="submitCheckin">
-                                            <v-text-field v-model="subject" label="Subject"></v-text-field>
+                                        <v-form class="form d-flex flex-column align-center"
+                                            @submit.prevent="submitCheckin">
+                                            <v-text-field v-model="subject" label="ชื่อวิชา"
+                                                class="subject-field"></v-text-field>
                                             <v-date-picker v-model="date" no-title landscape></v-date-picker>
-                                            <v-btn type="submit" color="primary">Submit</v-btn>
+                                            <v-btn type="submit" class="mt-4" color="primary"
+                                                style="width: 100%;">เสร็จสิ้น</v-btn>
                                         </v-form>
-
                                         <v-divider></v-divider>
-
                                     </v-card-text>
                                 </v-card>
                             </v-col>
                             <v-col class="content2" cols="6" sm="4" md="3">
-                                <!-- เพิ่มส่วนนี้เพื่อแสดงเลขห้อง -->
-                                
                                 <v-row v-if="showGeneratedRoomId">
-                                    <v-col cols="12">
+                                    <v-col cols="12" style="padding-top:0px;">
                                         <v-card>
-                                            <v-card-title class="bg-blue-grey">Generated Room ID</v-card-title>
-                                            <v-card-text>{{ generatedRoomId }}</v-card-text>
+                                            <v-card-title class="title">รหัสห้องเรียน</v-card-title>
+                                            <v-card-text style="padding: 2%;">{{ generatedRoomId }}</v-card-text>
                                         </v-card>
                                     </v-col>
                                 </v-row>
-                                <v-row>
-                                <v-card elevation="3">
-                                    <v-card-title class="bg-blue-grey">All Room</v-card-title>
-                                    <v-card-text>
-                                        <v-list>
-                                            <v-list-item-group v-if="checkinData.length > 0">
-                                                <v-list-item v-for="checkin in checkinData" :key="checkin.id"
-                                                    @click="showCheckinDetails(checkin)">
-                                                    <v-list-item-content>
-                                                        <v-list-item-title>{{ checkin.subject }}</v-list-item-title>
-                                                        <v-list-item-title>IDRoom -> {{ checkin.room
-                                                            }}</v-list-item-title>
-                                                        <v-list-item-subtitle>{{ checkin.class_date
-                                                            }}</v-list-item-subtitle>
-                                                    </v-list-item-content>
-                                                </v-list-item>
-                                            </v-list-item-group>
-                                            <v-alert v-else :value="true" color="info">No check-in data
-                                                available.</v-alert>
-                                        </v-list>
-                                    </v-card-text>
-                                </v-card>
-                            </v-row>
                             </v-col>
                         </v-row>
                     </v-container>
                 </v-main>
-                <div class="pa-6 text-center">{{ footer }}</div>
             </v-container>
         </v-app>
     </div>
@@ -189,6 +205,10 @@
                     checkinData: [],
                     attendees: [],
                     user: null,
+                    isTeacher: false,
+                    newRoomName: '',
+                    dialogEditRoom: false,
+                    selectedCheckinId: null
                 };
             },
 
@@ -211,52 +231,43 @@
                     firebase.auth().signInWithPopup(provider);
                 },
                 google_logout() {
-                    // เพิ่มโค้ดที่คุณต้องการทำหลังจาก logout ที่นี่
                     firebase.auth().signOut()
                         .then(() => {
-                            // หลังจาก logout สำเร็จ, คุณสามารถดำเนินการต่อได้ที่นี่
                             this.redirectToIndex();
                         })
                         .catch((error) => {
                             console.error("Logout error: ", error);
                         });
                 },
-
                 redirectToIndex() {
-                    // เปลี่ยนทางไปที่หน้า index.html หรือที่คุณต้องการ
                     window.location.href = "/index.html";
                 },
                 checkUserRole() {
                     const email = this.user.email;
-                    this.isTeacher = email.includes("@kkumail");
+                    this.isTeacher = email.includes("@kku.ac.th");
                 },
                 submitCheckin() {
                     this.room = this.generateRoomId();
                     this.generatedRoomId = this.room;
                     this.showGeneratedRoomId = true;
 
-                    const randomId = Math.random().toString(36).substring(7);
-
-                    // เพิ่มฟิลด์ attendees เพื่อเก็บข้อมูลนักเรียนที่เข้าร่วม
                     const checkinData = {
-                        id: randomId,
                         subject: this.subject,
                         room: this.room,
                         class_date: this.date,
-                        attendees: [], // สร้างตัวแปร attendees เป็นอาร์เรย์เปล่าก่อน
+                        attendees: [],
                     };
 
                     db.collection("checkin").add(checkinData)
-                        .then(() => {
-                            alert("Check-in record added successfully!");
+                        .then((docRef) => {
+                            alert("เพิ่มห้องเรียนในการเช็คชื่อเสร็จสิ้น!");
+                            this.fetchCheckinData();
                         })
                         .catch((error) => {
                             console.error("Error adding check-in record: ", error);
                             alert("Error adding check-in record. Please try again.");
                         });
                 },
-
-
                 fetchCheckinData() {
                     db.collection("checkin")
                         .get()
@@ -265,15 +276,13 @@
                             querySnapshot.forEach((doc) => {
                                 const checkin = doc.data();
                                 const attendees = checkin.attendees.map((attendee) => attendee.name);
-                                this.checkinData.push({ ...checkin, attendees });
+                                this.checkinData.push({ ...checkin, id: doc.id, attendees });
                             });
                         })
                         .catch((error) => {
                             console.error("Error fetching check-in data: ", error);
                         });
                 },
-
-
                 generateRoomId() {
                     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
                     const roomIdLength = 6;
@@ -286,50 +295,63 @@
 
                     return roomId;
                 },
-                handleStudentCheckin(checkinId) {
-                    console.log(`Student checked in with ID: ${checkinId}`);
-
-                    // ดึงข้อมูลการเช็คชื่อจาก Firestore
-                    const checkinRef = db.collection("checkin").doc(checkinId);
-
-                    // ดึงข้อมูลเดิมมาก่อน
-                    checkinRef.get()
-                        .then((doc) => {
-                            if (doc.exists) {
-                                const checkinData = doc.data();
-
-                                // เพิ่มข้อมูลนักเรียนที่เข้าร่วม
-                                const attendee = { id: this.user.uid, name: this.user.displayName };
-                                checkinData.attendees.push(attendee);
-
-                                // อัพเดทข้อมูลใน Firestore
-                                checkinRef.update({ attendees: checkinData.attendees })
-                                    .then(() => {
-                                        console.log("Attendee added successfully!");
-
-                                        // ดึงข้อมูลใหม่หลังจากอัพเดท
-                                        this.fetchCheckinData();
-
-                                        // เก็บข้อมูลนักเรียนที่เข้าร่วมไว้ในตัวแปร attendees
-                                        this.attendees = checkinData.attendees;
-                                    })
-                                    .catch((error) => {
-                                        console.error("Error updating check-in record: ", error);
-                                    });
-                            } else {
-                                console.error("Check-in document not found");
-                            }
-                        })
-                        .catch((error) => {
-                            console.error("Error getting check-in document: ", error);
-                        });
+                editRoomName(checkinId) {
+                    this.dialogEditRoom = true;
+                    this.selectedCheckinId = checkinId;
                 },
-                showCheckinDetails(checkin) {
-                    // นำ checkin ไปแสดงหน้าข้อมูลตามที่คุณต้องการ
-                    console.log("Showing check-in details:", checkin);
+                saveRoomName() {
+                    if (this.newRoomName.trim() !== '') {
+                        let oldSubject = '';
+                        db.collection("checkin")
+                            .doc(this.selectedCheckinId)
+                            .get()
+                            .then((doc) => {
+                                if (doc.exists) {
+                                    oldSubject = doc.data().subject;
+                                    return db.collection("checkin")
+                                        .doc(this.selectedCheckinId)
+                                        .update({
+                                            subject: this.newRoomName
+                                        });
+                                } else {
+                                    throw new Error("No document found");
+                                }
+                            })
+                            .then(() => {
+                                this.dialogEditRoom = false;
+                                alert("ชื่อวิชาเปลี่ยนแปลงเสร็จสิ้น!");
+                                this.fetchCheckinData();
+                            })
+                            .catch((error) => {
+                                console.error("Error updating subject: ", error);
+                                alert("Error updating subject. Please try again.");
 
-                    // ตัวอย่าง: แสดงข้อมูลใน console.log เป็นตัวอย่าง
-                    // คุณสามารถนำ checkin ไปใช้ในการแสดงในหน้าใหม่หรือ Dialog ตามที่คุณต้องการ
+                                this.newRoomName = oldSubject;
+                            });
+                    } else {
+                        alert("Please enter a subject.");
+                    }
+                },
+                closeDialog() {
+                    this.dialogEditRoom = false;
+                },
+                deleteCheckin(checkinId) {
+                    if (confirm("คุณแน่ใจหรือไม่ที่จะลบห้องเรียนนี้")) {
+                        db.collection("checkin")
+                            .doc(checkinId)
+                            .delete()
+                            .then(() => {
+                                alert("ลบห้องเรียนเสร็จสิ้น!");
+                                this.fetchCheckinData();
+                            })
+                            .catch((error) => {
+                                console.error("Error deleting check-in: ", error);
+                                alert("เกิดข้อผิดพลาดในการลบ. กรุณาลองอีกครั้ง.");
+                            });
+                    }
+                },
+                goToAddQuestionPage(checkinId) {
+                    window.location.href = `/add_question.html?checkinId=${checkinId}`;
                 },
                 toggleDrawer() {
                     this.drawer = !this.drawer;
@@ -337,6 +359,16 @@
                 goToHome() {
                     window.location.href = "/index.html";
                 },
+                goToClassroom(checkinId) {
+                    window.location.href = "/classroom.html?subjectId=" + checkinId;
+                },
+                viewAllroom() {
+                    window.location.href = "/allroom.html";
+                },
+                viewTeacherDashboard() {
+                    window.location.href = "/teacher_dashboard.html";
+                },
+
             },
         });
 
@@ -345,4 +377,4 @@
     </script>
 </body>
 
-</html>
+</html
