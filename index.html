@@ -264,7 +264,7 @@
                             <v-card elevation="3" class="card">
                                 <v-card-title class="card-title">เพิ่มการเช็คชื่อ</v-card-title>
                                 <v-card-actions class="d-flex justify-center">
-                                    <v-btn @click="navigate('/add-checkin.html')" v-if="isTeacher" color="primary"
+                                    <v-btn @click="navigate('./add-checkin.html')" v-if="isTeacher" color="primary"
                                         class="mr-2">เพิ่มการเช็คชื่อ</v-btn>
                                 </v-card-actions>
                             </v-card>
@@ -272,7 +272,7 @@
                             <v-card elevation="3" class="card" v-if="isLoggedIn && !isRegistered && isTeacher">
                                 <v-card-title class="card-title">ตรวจสอบรายชื่อนักเรียน</v-card-title>
                                 <v-card-actions class="d-flex justify-center">
-                                    <v-btn @click="navigate('/teacher_dashboard.html')" v-if="isTeacher"
+                                    <v-btn @click="navigate('./teacher_dashboard.html')" v-if="isTeacher"
                                         color="primary">ตรวจสอบรายชื่อนักเรียน</v-btn>
                                 </v-card-actions>
                             </v-card>
