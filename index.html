@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <title>Attendance System</title>
+    <title>ระบบเช็คชื่อชั้นเรียนออนไลน์</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.js"></script>
@@ -10,9 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-
     <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -110,8 +107,13 @@
         .v-btn__content {
             color: #000000;
         }
-        .notLogin{
+
+        .notLogin {
             color: red;
+        }
+
+        .card {
+            margin-bottom: 3%;
         }
 
         .footer {
@@ -159,9 +161,27 @@
                         </v-list-item-content>
                     </v-list-item>
 
+                    <v-list-item link @click="viewAllroom" class="menu-item" v-if="user && !isTeacher">
+                        <v-list-item-content class="home-text">
+                            <v-list-item-title>ห้องเรียนที่เข้าร่วม</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
                     <v-list-item link @click="viewTAddcheckin" class="menu-item" v-if="user && isTeacher">
                         <v-list-item-content class="home-text">
                             <v-list-item-title>เพิ่มการเช็คชื่อ</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
+                    <v-list-item link v-if="user && isTeacher" @click="viewAllroom" class="menu-item">
+                        <v-list-item-content class="home-text">
+                            <v-list-item-title>ห้องเรียน</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
+                    <v-list-item link v-if="user && isTeacher" @click="viewTeacherDashboard" class="menu-item">
+                        <v-list-item-content class="home-text">
+                            <v-list-item-title>ตรวจสอบรายชื่อนักเรียน</v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
 
@@ -177,34 +197,31 @@
             <v-main>
                 <v-container>
                     <v-row justify="center">
-                        <!-- Registration Form for Students -->
                         <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && !isTeacher">
                             <v-card elevation="3" class="card">
-                                <v-card-title class="card-title">Registration Form</v-card-title>
+                                <v-card-title class="card-title">ลงทะเบียน</v-card-title>
                                 <v-card-text>
-                                    <v-text-field v-model="registrationData.name" label="Full Name"></v-text-field>
-                                    <v-text-field v-model="registrationData.email" label="Email"></v-text-field>
-                                    <v-text-field v-model="registrationData.section" label="Section"></v-text-field>
-                                    <v-btn @click="registerUser" color="success">Register</v-btn>
+                                    <v-text-field v-model="registrationData.name" label="ชื่อ-นามสกุล"></v-text-field>
+                                    <v-text-field v-model="registrationData.email" label="อีเมล"></v-text-field>
+                                    <v-text-field v-model="registrationData.section"
+                                        label="กลุ่มการเรียน(Section)"></v-text-field>
+                                    <v-btn @click="registerUser" color="success">ลงทะเบียน</v-btn>
                                 </v-card-text>
                             </v-card>
                         </v-col>
 
-                        <!-- Registration Form for Teachers -->
-                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && isTeacher">
+                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && isTeacher && !user">
                             <v-card elevation="3" class="card">
-                                <v-card-title class="card-title">Teacher Registration Form</v-card-title>
+                                <v-card-title class="card-title">ลงทะเบียนคุณครู</v-card-title>
                                 <v-card-text>
-                                    <v-text-field v-model="registrationData.name" label="Full Name"></v-text-field>
-                                    <v-text-field v-model="registrationData.email" label="Email"></v-text-field>
-                                    <!-- Add more fields as needed -->
-                                    <v-btn @click="registerUser" color="success">Register</v-btn>
+                                    <v-text-field v-model="registrationData.name" label="ชื่อ-นามสกุล"></v-text-field>
+                                    <v-text-field v-model="registrationData.email" label="อีเมล"></v-text-field>
+                                    <v-btn @click="registerUser" color="success">ลงทะเบียน</v-btn>
                                 </v-card-text>
                             </v-card>
                         </v-col>
 
-                        <!-- Display User Information -->
-                        <v-col cols="12" sm="8" md="6" v-else-if="isLoggedIn">
+                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && isRegistered && !isTeacher ">
                             <v-card elevation="3" class="card">
                                 <v-card-title class="card-title">{{ title }}</v-card-title>
                                 <v-card-text v-if="user" class="avatar-center">
@@ -215,7 +232,7 @@
                             </v-card>
                         </v-col>
 
-                        <!-- Display User Information -->
+
                         <v-col cols="12" sm="8" md="6" v-else-if="!isLoggedIn">
                             <v-card elevation="3" class="card">
                                 <v-card-title class="card-title">{{ title }}</v-card-title>
@@ -224,24 +241,94 @@
                                 </v-card-text>
                             </v-card>
                         </v-col>
-
                     </v-row>
+
                     <v-row justify="center">
-                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && !isTeacher">
+                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isTeacher">
                             <v-card elevation="3" class="card">
-                                <v-card-title class="card-title">เช็กชื่อ</v-card-title>
-                                <v-card-actions>
-                                    <v-btn @click="navigate('/student_dashboard.html')" v-if="!isTeacher" color="primary">เช็กชื่อ</v-btn>
+                                <v-card-title class="card-title">เช็คชื่อ</v-card-title>
+                                <v-card-actions class="d-flex justify-center">
+                                    <v-btn @click="navigate('./student_dashboard.html')" v-if="!isTeacher"
+                                        color="primary">เช็คชื่อ</v-btn>
+                                </v-card-actions>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                
+                    <v-row justify="center">
+
+                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && isTeacher">
+                            <v-card elevation="3" class="card">
+                                <v-card-title class="card-title">เพิ่มการเช็คชื่อ</v-card-title>
+                                <v-card-actions class="d-flex justify-center">
+                                    <v-btn @click="navigate('./add-checkin.html')" v-if="isTeacher" color="primary"
+                                        class="mr-2">เพิ่มการเช็คชื่อ</v-btn>
+                                </v-card-actions>
+                            </v-card>
+
+                            <v-card elevation="3" class="card" v-if="isLoggedIn && !isRegistered && isTeacher">
+                                <v-card-title class="card-title">ตรวจสอบรายชื่อนักเรียน</v-card-title>
+                                <v-card-actions class="d-flex justify-center">
+                                    <v-btn @click="navigate('./teacher_dashboard.html')" v-if="isTeacher"
+                                        color="primary">ตรวจสอบรายชื่อนักเรียน</v-btn>
                                 </v-card-actions>
                             </v-card>
                         </v-col>
 
+                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isRegistered && isTeacher">
+                            <v-card elevation="3" class="card">
+                                <v-card-title class="card-title">ห้องเรียนทั้งหมด</v-card-title>
+                                <v-card-text>
+                                    <v-list v-if="checkinData.length > 0">
+                                        <v-list-item-group>
+                                            <template v-for="checkin in checkinData">
+                                                <v-list-item :key="checkin.id" @click="goToClassroom(checkin.id)">
+                                                    <v-list-item-content>
+                                                        <v-list-item-title class="title">วิชา:{{ checkin.subject
+                                                            }}</v-list-item-title>
+                                                        <v-list-item-subtitle>รหัสห้องเรียน -> {{ checkin.room
+                                                            }}</v-list-item-subtitle>
+                                                    </v-list-item-content>
+                                                </v-list-item>
+                                            </template>
+                                        </v-list-item-group>
+                                        <v-divider></v-divider>
+                                    </v-list>
+                                </v-card-text>
+                            </v-card>
+                        </v-col>
+
+                        <v-col cols="12" sm="8" md="6" v-if="isLoggedIn && !isTeacher">
+                            <v-card elevation="3" class="card">
+                                <v-card-title class="card-title">ห้องเรียนที่เข้าร่วม</v-card-title>
+                                <v-card-text>
+                                    <template v-for="checkin in checkinData">
+                                        <template
+                                            v-if="checkin.attendees.some(attendee => attendee.email === user.email)">
+                                            <v-list-item :key="checkin.id"
+                                                @click="goToClassroomSTD(checkin.id)">
+                                                <v-list-item-content>
+                                                    <v-list-item-title class="title">วิชา: {{
+                                                        checkin.subject }}</v-list-item-title>
+                                                    <v-list-item-subtitle>วันที่ -> {{ new
+                                                        Date(checkin.class_date.toDate()).toLocaleDateString('th-TH',
+                                                        { year: 'numeric', month: 'long', day:
+                                                        'numeric' }) }}</v-list-item-subtitle>
+                                                </v-list-item-content>
+                                            </v-list-item>
+                                        </template>
+                                    </template>
+                                </v-card-text>
+                            </v-card>
+                        </v-col>
                     </v-row>
+                    
                 </v-container>
             </v-main>
             <div class="footer">{{ footer }}</div>
         </v-app>
     </div>
+
 
     <script type="module">
         const firebaseConfig = {
@@ -259,18 +346,20 @@
         const app = Vue.createApp({
             data() {
                 return {
-                    title: "ยินดีต้อนรับสู่ระบบเช็กชื่อ",
+                    title: "ยินดีต้อนรับสู่ระบบเช็คชื่อ",
                     footer: "footer",
                     user: null,
                     isTeacher: false,
                     drawer: false,
                     isLoggedIn: false,
                     isRegistered: false,
+                    isTeacherRegistered: false,
                     registrationData: {
                         name: "",
                         email: "",
                         section: "",
                     },
+                    checkinData: [],
                 };
             },
 
@@ -285,10 +374,9 @@
                     } else {
                         this.user = null;
                         this.isLoggedIn = false;
-                        this.isRegistered = false; 
+                        this.isRegistered = false;
                     }
                 });
-
             },
 
             methods: {
@@ -317,9 +405,9 @@
                             console.error("Login error: ", error);
                         });
                 },
+
                 async checkRegistrationStatus() {
                     const userDoc = await db.collection("students").doc(this.user.uid).get();
-
                     return userDoc.exists;
                 },
                 registerUser() {
@@ -331,33 +419,38 @@
                         }
                         this.registrationData.name = "";
                         this.isRegistered = false;
+                        console.log("User registered successfully");
                     } else {
                         alert("Please fill in all fields.");
                     }
                 },
-
-
                 isValidRegistrationData() {
                     return (
                         this.registrationData.name &&
                         this.registrationData.email
                     );
                 },
+
                 registerTeacherData() {
-                    db.collection("teachers").doc(this.user.uid)
-                        .set({
-                            id: this.user.uid,
-                            name: this.registrationData.name,
-                            email: this.registrationData.email,
-                        })
-                        .then(() => {
-                            console.log("Teacher data added successfully");
-                            this.isRegistered = true;
-                        })
-                        .catch((error) => {
-                            console.error("Error adding teacher data: ", error);
-                        });
+                    if (this.isValidRegistrationData()) {
+                        db.collection("teachers").doc(this.user.uid)
+                            .set({
+                                id: this.user.uid,
+                                name: this.registrationData.name,
+                                email: this.registrationData.email,
+                            })
+                            .then(() => {
+                                console.log("Teacher data added successfully");
+                                this.isRegistered = true;
+                            })
+                            .catch((error) => {
+                                console.error("Error adding teacher data: ", error);
+                            });
+                    } else {
+                        alert("Please fill in all fields.");
+                    }
                 },
+
                 registerStudentData() {
                     db.collection("students").doc(this.user.uid)
                         .set({
@@ -374,7 +467,6 @@
                             console.error("Error adding student data: ", error);
                         });
                 },
-
                 google_logout() {
                     if (confirm("Are you sure?")) {
                         firebase.auth().signOut();
@@ -382,26 +474,61 @@
                 },
                 checkUserRole() {
                     const email = this.user.email;
-                    this.isTeacher = email.includes("@kkumail");
+                    this.isTeacher = email.includes("@kku.ac.th");
+                },
+                fetchCheckinData() {
+                    db.collection("checkin")
+                        .get()
+                        .then((querySnapshot) => {
+                            this.checkinData = [];
+                            querySnapshot.forEach((doc) => {
+                                const checkin = doc.data();
+                                const attendees = checkin.attendees.map((attendee) => ({
+                                    email: attendee.email,
+                                    name: attendee.name
+                                }));
+                                this.checkinData.push({ ...checkin, id: doc.id, attendees });
+                            });
+                        })
+                        .catch((error) => {
+                            console.error("Error fetching check-in data: ", error);
+                        });
                 },
                 viewStudentDashboard() {
-                    window.location.href = "/student_dashboard.html";
+                    window.location.href = "./student_dashboard.html";
+                },
+                viewTeacherDashboard() {
+                    window.location.href = "./teacher_dashboard.html";
                 },
                 viewTAddcheckin() {
-                    window.location.href = "/add-checkin.html";
+                    window.location.href = "./add-checkin.html";
+                },
+                viewAllroom() {
+                    window.location.href = "./allroom.html";
                 },
                 navigate(path) {
                     window.location.href = path;
                 },
                 goToHome() {
-                    window.location.href = "/index.html";
+                    window.location.href = "./index.html";
+                },
+                goToClassroom(checkinId) {
+                    window.location.href = "./classroom.html?subjectId=" + checkinId;
+                },
+                goToClassroomSTD(checkinId) {
+                    window.location.href = "./classroom.html?roomId=" + checkinId;
                 },
             },
+            mounted() {
+                this.fetchCheckinData();
+            }
+
         });
 
         const vuetify = Vuetify.createVuetify();
         app.use(vuetify).mount("#app");
     </script>
+
 </body>
 
 </html>

@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Student Dashboard</title>
+    <title>เช็คชื่อ</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.js"></script>
@@ -27,6 +27,7 @@
         body {
             font-family: Prompt;
         }
+
         .avatar-center {
             display: flex;
             align-items: center;
@@ -59,12 +60,11 @@
         .form-container {
             width: 100%;
             max-width: 1000px;
-            
         }
+
         .form {
             margin-top: 4%;
         }
-        v-btn{}
     </style>
 </head>
 
@@ -107,6 +107,12 @@
                         </v-list-item-content>
                     </v-list-item>
 
+                    <v-list-item link @click="viewAllroom" class="menu-item" v-if="user && !isTeacher">
+                        <v-list-item-content class="home-text">
+                            <v-list-item-title>ห้องเรียนที่เข้าร่วม</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
                     <v-list-item v-if="user" link @click="google_logout()" class="menu-item">
                         <v-list-item-content class="custom-button">
                             ออกจากระบบ
@@ -121,19 +127,17 @@
                     <v-container fluid>
                         <v-row v-if="user && !isTeacher">
                             <v-col cols="12" sm="8" md="6">
-                                <v-card class="formtoCheck"  elevation="3">
-                                    <v-card-title 
+                                <v-card class="formtoCheck" elevation="3">
+                                    <v-card-title
                                         style="background: linear-gradient(to right, #045f8d, #037db6); color: white;">เช็คชื่อ</v-card-title>
                                     <v-text-field v-model="roomId" label="รหัสห้องเรียน"></v-text-field>
-                                    <v-text-field  v-model="studentData.id" label="รหัสนักศึกษา"></v-text-field>
-                                    <v-text-field  v-model="studentData.name" label="ชื่อ-นามสกุล"></v-text-field>
-                                    <v-text-field  v-model="studentData.email"
-                                        label="อีเมล"></v-text-field>
-                                    <v-text-field  v-model="studentData.section"
+                                    <v-text-field v-model="studentData.id" label="รหัสนักศึกษา"></v-text-field>
+                                    <v-text-field v-model="studentData.name" label="ชื่อ-นามสกุล"></v-text-field>
+                                    <v-text-field v-model="studentData.email" label="อีเมล"></v-text-field>
+                                    <v-text-field v-model="studentData.section"
                                         label="กลุ่มการเรียน (Section)"></v-text-field>
-                                    <v-btn @click="joinActivity" color="indigo" style="
-                                    margin-bottom: 20px;
-                                ">เสร็จสิ้น</v-btn>
+                                    <v-btn @click="joinActivity" color="indigo"
+                                        style="margin-bottom: 20px;">เสร็จสิ้น</v-btn>
                                 </v-card>
                             </v-col>
                         </v-row>
@@ -163,7 +167,7 @@
                     drawer: false,
                     user: null,
                     isTeacher: false,
-                    roomId: "",  
+                    roomId: "",
                     studentData: {
                         email: "",
                         id: "",
@@ -188,6 +192,7 @@
                     }
                 });
             },
+
             methods: {
                 google_login() {
                     var provider = new firebase.auth.GoogleAuthProvider();
@@ -205,58 +210,22 @@
                             console.error("Logout error: ", error);
                         });
                 },
-
                 redirectToIndex() {
-                    window.location.href = "/index.html";
+                    window.location.href = "./index.html";
                 },
                 checkUserRole() {
                     const email = this.user.email;
                     this.isTeacher = email.includes("@kku.ac.th");
-                    if (!this.isTeacher) {
-
-                    }
-                },
-                checkin() {
-                    if (this.isValidStudentData()) {
-                        // this.sendCheckinDataToTeacher(); // Uncomment this line if you want to send check-in data to teacher
-                        this.saveStudentData();
-                    } else {
-                        alert("Please fill in all fields.");
-                    }
-                },
-                isValidStudentData() {
-                    return (
-                        this.studentData.email &&
-                        this.studentData.id &&
-                        this.studentData.name &&
-                        this.studentData.section
-                    );
-                },
-                saveStudentData() {
-                    const studentCollection = db.collection("students");
-                    studentCollection.add(this.studentData)
-                        .then(() => {
-                            console.log("Student data saved successfully");
-                        })
-                        .catch((error) => {
-                            console.error("Error saving student data: ", error);
-                        });
                 },
                 joinActivity() {
-                    if (this.roomId) {
-                        // ค้นหากิจกรรมโดยใช้ roomId
+                    if (this.roomId && this.studentData.id && this.studentData.name && this.studentData.email && this.studentData.section) {
                         db.collection("checkin").where("room", "==", this.roomId)
                             .get()
                             .then((querySnapshot) => {
                                 if (querySnapshot.size > 0) {
-                                    // หากมีกิจกรรมที่มี roomId ที่ตรงกัน
                                     const checkinData = querySnapshot.docs[0].data();
-
-                                    // ตรวจสอบว่านักเรียนยังไม่ได้เข้าร่วม
                                     const attendeeExists = checkinData.attendees.some(attendee => attendee.id === this.user.uid);
-
                                     if (!attendeeExists) {
-                                        // เพิ่มข้อมูลนักเรียนในกิจกรรม
                                         const attendee = {
                                             id: this.studentData.id,
                                             name: this.studentData.name,
@@ -264,36 +233,32 @@
                                             section: this.studentData.section,
                                         };
                                         checkinData.attendees.push(attendee);
-
-                                        // อัพเดทข้อมูลใน Firestore
                                         db.collection("checkin").doc(querySnapshot.docs[0].id)
                                             .update({ attendees: checkinData.attendees })
                                             .then(() => {
                                                 alert("You have successfully joined the activity!");
+                                                this.goToClassroom(this.roomId); 
                                             })
                                             .catch((error) => {
                                                 console.error("Error updating check-in record: ", error);
                                             });
                                         this.clearForm();
                                     } else {
-                                        // นักเรียนได้เข้าร่วมกิจกรรมแล้ว
                                         alert("You have already joined this activity.");
                                         this.clearForm();
                                     }
                                 } else {
-                                    // ไม่พบกิจกรรมที่ตรงกัน
                                     alert("Activity not found with the given room ID.");
                                 }
                             })
                             .catch((error) => {
-                                // มีข้อผิดพลาดในการค้นหากิจกรรม
                                 console.error("Error searching for activity: ", error);
                             });
                     } else {
-                        // ถ้าผู้ใช้ไม่กรอกรหัสห้อง
-                        alert("Please enter the room ID before checking in.");
+                        alert("กรุณากรอกข้อมูลให้ครบถ้วนก่อนทำการ join activity");
                     }
                 },
+
                 clearForm() {
                     this.studentData.id = "";
                     this.studentData.name = "";
@@ -301,9 +266,16 @@
                     this.studentData.section = "";
                 },
                 goToHome() {
-                    window.location.href = "/index.html";
+                    window.location.href = "./index.html";
+                },
+                goToClassroom(roomId) {
+                    window.location.href = "./classroom.html?roomId2=" + roomId;
+                },
+                viewAllroom() {
+                    window.location.href = "./allroom.html";
                 },
             },
+
         });
 
         const vuetify = Vuetify.createVuetify();
