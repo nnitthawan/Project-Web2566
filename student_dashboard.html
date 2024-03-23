@@ -132,8 +132,8 @@
                                         style="background: linear-gradient(to right, #045f8d, #037db6); color: white;">เช็คชื่อ</v-card-title>
                                     <v-text-field v-model="roomId" label="รหัสห้องเรียน"></v-text-field>
                                     <v-text-field v-model="studentData.id" label="รหัสนักศึกษา"></v-text-field>
-                                    <v-text-field v-model="studentData.name" label="ชื่อ-นามสกุล"></v-text-field>
-                                    <v-text-field v-model="studentData.email" label="อีเมล"></v-text-field>
+                                    <v-text-field v-model="studentData.name"  placeholder="ชื่อ-นามสกุล" :value="user ? user.displayName : ''"  readonly></v-text-field>
+                                    <v-text-field v-model="studentData.email" placeholder="อีเมล" :value="user ? user.email : ''"  readonly></v-text-field>
                                     <v-text-field v-model="studentData.section"
                                         label="กลุ่มการเรียน (Section)"></v-text-field>
                                     <v-btn @click="joinActivity" color="indigo"
@@ -218,46 +218,46 @@
                     this.isTeacher = email.includes("@kku.ac.th");
                 },
                 joinActivity() {
-                    if (this.roomId && this.studentData.id && this.studentData.name && this.studentData.email && this.studentData.section) {
-                        db.collection("checkin").where("room", "==", this.roomId)
-                            .get()
-                            .then((querySnapshot) => {
-                                if (querySnapshot.size > 0) {
-                                    const checkinData = querySnapshot.docs[0].data();
-                                    const attendeeExists = checkinData.attendees.some(attendee => attendee.id === this.user.uid);
-                                    if (!attendeeExists) {
-                                        const attendee = {
-                                            id: this.studentData.id,
-                                            name: this.studentData.name,
-                                            email: this.studentData.email,
-                                            section: this.studentData.section,
-                                        };
-                                        checkinData.attendees.push(attendee);
-                                        db.collection("checkin").doc(querySnapshot.docs[0].id)
-                                            .update({ attendees: checkinData.attendees })
-                                            .then(() => {
-                                                alert("You have successfully joined the activity!");
-                                                this.goToClassroom(this.roomId); 
-                                            })
-                                            .catch((error) => {
-                                                console.error("Error updating check-in record: ", error);
-                                            });
-                                        this.clearForm();
-                                    } else {
-                                        alert("You have already joined this activity.");
-                                        this.clearForm();
-                                    }
-                                } else {
-                                    alert("Activity not found with the given room ID.");
-                                }
+                if (this.roomId && this.studentData.id && this.studentData.section) {
+        db.collection("checkin").where("room", "==", this.roomId)
+            .get()
+            .then((querySnapshot) => {
+                if (querySnapshot.size > 0) {
+                    const checkinData = querySnapshot.docs[0].data();
+                    const attendeeExists = checkinData.attendees.some(attendee => attendee.id === this.user.uid);
+                    if (!attendeeExists) {
+                        const attendee = {
+                            id: this.studentData.id,
+                            name: this.user.displayName, 
+                            email: this.user.email,
+                            section: this.studentData.section
+                        };
+                        checkinData.attendees.push(attendee);
+                        db.collection("checkin").doc(querySnapshot.docs[0].id)
+                            .set({ attendees: checkinData.attendees }, { merge: true }) 
+                            .then(() => {
+                                alert("You have successfully joined the activity!");
+                                this.goToClassroom(this.roomId); 
                             })
                             .catch((error) => {
-                                console.error("Error searching for activity: ", error);
+                                console.error("Error updating check-in record: ", error);
                             });
-                    } else {
-                        alert("กรุณากรอกข้อมูลให้ครบถ้วนก่อนทำการ join activity");
-                    }
-                },
+                                this.clearForm();
+                            } else {
+                                alert("You have already joined this activity.");
+                                this.clearForm();
+                            }
+                            } else {
+                                alert("Activity not found with the given room ID.");
+                            }
+                        })
+                        .   catch((error) => {
+                                console.error("Error searching for activity: ", error);
+                        });
+                            } else {
+                                alert("กรุณากรอกข้อมูลให้ครบถ้วนก่อนทำการ join activity");
+                            }
+                        },
 
                 clearForm() {
                     this.studentData.id = "";

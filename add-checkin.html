@@ -88,11 +88,13 @@
 <body>
     <div id="app">
         <v-app>
+            
             <v-container fluid>
                 <v-app-bar app color="indigo" dark>
                     <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
                     <v-toolbar-title>ระบบเช็คชื่อชั้นเรียนออนไลน์ (สำหรับคุณครู)</v-toolbar-title>
                 </v-app-bar>
+                
                 <v-navigation-drawer app v-model="drawer" color="indigo" dark fixed>
                     <v-list>
                         <v-card elevation="3">
@@ -138,6 +140,12 @@
                         <v-list-item v-if="user" link @click="google_logout()" class="menu-item">
                             <v-list-item-content class="custom-button">
                                 ออกจากระบบ
+                            </v-list-item-content>
+                        </v-list-item>
+
+                        <v-list-item link @click="goToAddQuestionPage" class="menu-item">
+                            <v-list-item-content class="home-text">
+                                <v-list-item-title>เพิ่มคำถาม</v-list-item-title>
                             </v-list-item-content>
                         </v-list-item>
 
@@ -367,6 +375,9 @@
                 },
                 viewTeacherDashboard() {
                     window.location.href = "./teacher_dashboard.html";
+                },
+                goToAddQuestionPage() {
+                    window.location.href = "./add_question.html";
                 },
 
             },

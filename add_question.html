@@ -182,6 +182,20 @@
                         console.error("Error adding questions: ", error);
                     }
                 },
+
+                // เพิ่มฟังก์ชันสำหรับแก้ไขคำถามที่มีอยู่แล้ว
+                editQuestion(questionId, newText) {
+                    try {
+                        db.collection("questions").doc(questionId).update({
+                            questionText: newText
+                        });
+                        console.log("Question edited successfully.");
+                        // หลังจากแก้ไขข้อมูลคำถามเสร็จสิ้น คุณอาจต้องดึงข้อมูลคำถามใหม่จาก Firestore อีกครั้ง
+                        this.fetchQuestions();
+                    } catch (error) {
+                        console.error("Error editing question: ", error);
+                    }
+                },
                 async fetchQuestions() {
                     try {
                         this.existingQuestions = [];
